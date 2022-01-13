@@ -35,6 +35,20 @@
        * DO NOT USE ONCLICK HANDLERS.
        * THEY ADD A 200MS DELAY!
        */
+       this.airconsole.onMessage = function(device_id, messageStr) {
+         message = JSON.parse(messageStr);
+         if (message.type == 'vote') {
+           console.log("voted");
+           var button = document.createElement("button");
+           button.innerHTML = message.data;
+           button.id = message.data;
+           button.parentNode = document.getElementById('parentNode');
+
+           var parentNode = document.getElementById("parentNode");
+           parentNode.appendChild(button);
+         }
+       }
+
       if (!("ontouchstart" in document.createElement("div"))) {
         var elements = document.getElementsByTagName("*");
         for (var i = 0; i < elements.length; ++i) {
@@ -60,6 +74,7 @@
 </head>
 <body onload="window.app = new App()">
   <!-- Add your HTML elements here -->
+  <div id="parentNode"></div>
   <div id="interact-button" ontouchstart="window.app.sendMessageToScreen('interact')"></div>
 </body>
 </html>
