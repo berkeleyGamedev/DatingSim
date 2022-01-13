@@ -15,6 +15,25 @@
       background-size: contain;
       background-repeat: no-repeat;
     }
+    #parentNode {
+      width: 100%;
+      height: 100%;
+    }
+    .button-list {
+      display: flex;
+      align-items: center;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .voting-button {
+      background-image: url("button.png");
+      margin: 10px 0;
+      width: 240px;
+      height: 120px;
+      background-size: 100%;
+      background-repeat: no-repeat;
+      color: white;
+    }
   </style>
   
   <script type="text/javascript">
@@ -43,6 +62,7 @@
            button.innerHTML = message.data;
            button.id = message.data;
            button.parentNode = document.getElementById('parentNode');
+           button.className = "voting-button";
 
            var parentNode = document.getElementById("parentNode");
            parentNode.appendChild(button);
@@ -74,7 +94,7 @@
 </head>
 <body onload="window.app = new App()">
   <!-- Add your HTML elements here -->
-  <div id="parentNode"></div>
-  <div id="interact-button" ontouchstart="window.app.sendMessageToScreen('interact')"></div>
+  <div id="parentNode" class="button-list">
+  </div>
 </body>
 </html>
