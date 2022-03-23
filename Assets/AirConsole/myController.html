@@ -43,7 +43,7 @@
     function App() {
 
     /* JavaScript / Functionality. Add functions and evens here */ 
-      this.airconsole = new AirConsole({"orientation": "portrait"});
+      airconsole = new AirConsole({"orientation": "portrait"});
       
       /*
        * Here we are adding support for mouse events manually.
@@ -54,15 +54,23 @@
        * DO NOT USE ONCLICK HANDLERS.
        * THEY ADD A 200MS DELAY!
        */
-       this.airconsole.onMessage = function(device_id, messageStr) {
-         message = JSON.parse(messageStr);
-         if (message.type == 'vote') {
+       airconsole.onMessage = function(device_id, messageStr) {
+         const msg = JSON.parse(messageStr);
+         if (msg.type == 'vote') {
            console.log("voted");
            var button = document.createElement("button");
-           button.innerHTML = message.data;
-           button.id = message.data;
+           button.innerHTML = msg.data;
+           button.id = msg.data;
            button.parentNode = document.getElementById('parentNode');
            button.className = "voting-button";
+           button.addEventListener("click", () => {
+              airconsole.message(AirConsole.SCREEN, {"vote": msg.data})
+              const parent = document.getElementById('parentNode')
+              while (parent.firstChild) {
+                parent.removeChild(parent.firstChild);
+              }
+            }
+           );
 
            var parentNode = document.getElementById("parentNode");
            parentNode.appendChild(button);

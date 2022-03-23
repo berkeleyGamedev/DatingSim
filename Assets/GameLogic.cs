@@ -11,9 +11,11 @@ using Yarn.Unity;
 public class GameLogic : MonoBehaviour
 {
     int numPlayers;
-    List<int> votes;
+    Dictionary<string, int> votes;
+    int numVotes;
     [SerializeField]
     private GameObject OptionList;
+    private bool voting_active = false;
 
     public class Message
     {
@@ -27,53 +29,85 @@ public class GameLogic : MonoBehaviour
     {
         AirConsole.instance.onMessage += OnMessage;
         AirConsole.instance.onConnect += OnConnect;
+        AirConsole.instance.onDisconnect += OnDisconnect;
+
     }
 
     void Start()
     {
         numPlayers = 0;
+        numVotes = 0;
+        votes = new Dictionary<string, int>();
     }
 
+    /// <summary>
+    /// Handles device connect
+    /// </summary>
     void OnConnect(int deviceID)
     {
         numPlayers++;
-
+        Debug.Log("connect");
     }
 
-    // void Update()
-    // {
-    //     Debug.Log(OptionList.GetComponentsInChildren<Transform>().Length);
-    // }
+    /// <summary>
+    /// Handles device disconnect
+    /// </summary>
+    void OnDisconnect(int deviceID)
+    {
+        numPlayers--;
+        Debug.Log("disconnect");
+    }
 
+    /// <summary>
+    /// Ends voting seesion and selects winning option
+    /// </summary>
+    void endVoting()
+    {
+        voting_active = false;
+        Debug.Log("round over");
+        string winner = "";
+        int maxVal = 0;
+        foreach (string optionText in votes.Keys)
+        {
+            if (votes[optionText] >= maxVal)
+            {
+                maxVal = votes[optionText];
+                winner = optionText;
+            }
+        }
+        foreach (Transform child in OptionList.GetComponentsInChildren<Transform>())
+        {
+            GameObject obj = child.gameObject;
+            Debug.Log(obj.name);
+            if (obj.name.Contains("Option View") && obj.GetComponentInChildren<TextMeshProUGUI>().text.Equals(winner))
+            {
+                Debug.Log("winner is " + winner);
+                Debug.Log(obj.name);
+                obj.GetComponent<OptionView>().InvokeOptionSelected();
+            }
+        }
+        numVotes = 0;
+        votes.Clear();
+    }
+
+    /// <summary>
+    /// Creates a new voting option json to send to devices and activates voting session
+    /// </summary>
     public void broadcastVotingOption(string optionText)
     {
-        Debug.Log(optionText);
+        voting_active = true;
         Message msg = new Message
         {
             type = "vote",
             data = optionText
         };
+        votes[optionText] = 0;
         SendBroadcast(msg);
     }
 
-    public void BroadcastVotingOptions()
-    {
-        Transform[] options = OptionList.GetComponentsInChildren<Transform>();
-        if (options.Length == 0)
-        {
-            return;
-        }
-        votes = new List<int>(new int[options.Length]);
-        Debug.Log(options.Length);
-        List<string> optionStrings = new List<string>();
-        foreach (Transform option in options)
-        {
-            Debug.Log(option.gameObject.name);
-            // optionStrings.Add(option.gameObject.GetComponentInChildren<TextMeshProUGUI>().text);
-        }
-        Debug.Log("broadcasting voting options");
-    }
-
+    /// <summary>
+    /// Sends voting option stringified json to each device
+    /// </summary>
     void SendBroadcast(Message msg)
     {
         foreach (int deviceID in AirConsole.instance.GetControllerDeviceIds())
@@ -83,6 +117,9 @@ public class GameLogic : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Handles message received from device
+    /// </summary>
     void OnMessage(int deviceID, JToken data)
     {
         Debug.Log("message from" + deviceID + ", data: " + data);
@@ -92,15 +129,13 @@ public class GameLogic : MonoBehaviour
         }
         if (data["vote"] != null)
         {
-            int index = 0;
-            foreach (Transform child in OptionList.GetComponentsInChildren<Transform>())
+            Debug.Log("voting");
+            string optionText = data["vote"].ToString();
+            votes[optionText] += 1;
+            numVotes += 1;
+            if (numVotes == numPlayers)
             {
-                if (child.gameObject.GetComponentInChildren<TextMeshProUGUI>().text.Equals(data["vote"].ToString()))
-                {
-                    votes[index]++;
-                    return;
-                }
-                index++;
+                endVoting();
             }
         }
     }
